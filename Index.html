@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mini Game of FLIP — Solo (GTramp Presets)</title>
+<style>
+  :root{--bg:#071022;--card:#0b1220;--accent:#ffb86b;--muted:#9aa7b2}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#e6eef6;background:linear-gradient(180deg,#031021 0%, #071226 100%)}
+  .wrap{max-width:920px;margin:18px auto;padding:16px;}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  h1{font-size:20px;margin:0;color:#fff}
+  p.lead{margin:4px 0 0;color:var(--muted);font-size:13px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:14px;box-shadow:0 8px 24px rgba(2,6,23,0.7);}
+  .controls{display:flex;gap:8px;flex-wrap:wrap}
+  button{background:linear-gradient(180deg,#0e1a2b,#08121b);border:1px solid rgba(255,255,255,0.03);padding:10px 14px;border-radius:10px;color:#fff;font-weight:700;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);font-weight:600}
+  .maingrid{display:grid;grid-template-columns:1fr 340px;gap:14px;margin-top:14px}
+  @media (max-width:820px){.maingrid{grid-template-columns:1fr}}
+  .trickBox{background:rgba(255,255,255,0.02);padding:22px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:220px;}
+  .trick{font-size:22px;font-weight:800;color:var(--accent);text-align:center}
+  .small{font-size:13px;color:var(--muted);margin-top:8px;text-align:center}
+  .actionRow{display:flex;gap:10px;margin-top:14px}
+  .land{background:linear-gradient(90deg,#4ade80,#16a34a);color:#042014;border:0;padding:10px 18px;border-radius:10px;font-weight:800}
+  .miss{background:linear-gradient(90deg,#f97316,#ef4444);color:#2b0404;border:0;padding:10px 18px;border-radius:10px;font-weight:800}
+  .settings{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+  .muted{color:var(--muted)}
+  .playerCard{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:12px;border-radius:10px;display:flex;flex-direction:column;gap:8px}
+  .letters{font-weight:900;color:var(--accent);letter-spacing:6px;font-size:20px;text-align:center}
+  .tiny{font-size:12px;color:var(--muted)}
+  .footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:center}
+  .row{display:flex;gap:8px;align-items:center}
+  select{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:#e6eef6}
+  .history{max-height:220px;overflow:auto;padding:8px;border-radius:8px;background:rgba(255,255,255,0.01);font-size:13px}
+  .bigAction{font-size:16px;padding:12px 18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Mini Game of FLIP — Solo</h1>
+      <p class="lead">Preset GTramp-style tricks. Pick a difficulty, get a trick, attempt it, mark Landed or Missed.</p>
+    </div>
+    <div class="tiny muted">Offline — saves progress locally</div>
+  </header>
+
+  <div class="card">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+      <div class="row">
+        <label class="tiny muted">Difficulty</label>
+        <select id="difficulty">
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+        <button id="btn-new" class="bigAction">New Trick</button>
+      </div>
+      <div class="row">
+        <button id="btn-reset" class="ghost">Reset Game</button>
+      </div>
+    </div>
+
+    <div class="maingrid">
+      <div>
+        <div class="trickBox" id="trickBox">
+          <div class="trick" id="trickName">Tap "New Trick" to start</div>
+          <div class="small" id="trickDesc">Tricks are preset and organized by Easy / Medium / Hard</div>
+
+          <div class="actionRow" style="margin-top:18px">
+            <button id="btn-land" class="land">Landed</button>
+            <button id="btn-miss" class="miss">Missed</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap">
+          <div class="playerCard" style="flex:1">
+            <div class="tiny muted">Your Letters (misses give the next letter)</div>
+            <div class="letters" id="letters">----</div>
+            <div class="tiny muted">Goal: Avoid spelling <strong>F L I P</strong></div>
+          </div>
+          <div style="width:220px" class="playerCard">
+            <div class="tiny muted">Streak</div>
+            <div style="font-weight:800;font-size:18px" id="streak">0 landed in a row</div>
+            <div style="margin-top:8px" class="tiny muted">Landing clears letter progress.</div>
+          </div>
+        </div>
+      </div>
+
+      <aside>
+        <div class="playerCard">
+          <div class="tiny muted">Game Status</div>
+          <div style="font-weight:900;font-size:18px;margin-top:6px" id="statusText">Waiting</div>
+          <div style="margin-top:10px" class="tiny muted">History (most recent first)</div>
+          <div class="history" id="history"></div>
+          <div style="margin-top:10px" class="row">
+            <button id="btn-save" class="ghost btn-sm">Save Score</button>
+            <button id="btn-load" class="ghost btn-sm">Load Score</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" class="playerCard">
+          <div class="tiny muted">Tips</div>
+          <ul class="tiny muted" style="padding-left:16px;margin:8px 0 0 0">
+            <li>Tap <strong>New Trick</strong> to get a challenge from the chosen difficulty.</li>
+            <li>Tap <strong>Landed</strong> if you landed it — this clears letters.</li>
+            <li>Tap <strong>Missed</strong> if you failed — you get the next letter.</li>
+            <li>Letters spell <strong>F L I P</strong>. On full word you lose — then reset or save.</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer">Made for practice — preset tricks are a mix of common GTramp-style names.</div>
+  </div>
+</div>
+
+<script>
+// Preset trick lists (GTramp-style names)
+const TRICKS = {
+  easy: [
+    "Backflip",
+    "Frontflip",
+    "Barani (Front 180)",
+    "Cody (Back with front leg out)",
+    "Seat Drop to Stand",
+    "Tuck Jump",
+    "Gainer (easy)",
+    "Back to Knees",
+    "Half-Twist Backflip",
+    "Front Pike"
+  ],
+  medium: [
+    "Back Full (Backflip + 360 twist)",
+    "Sideflip 180",
+    "Gainer Full",
+    "Front Full (Frontflip full)",
+    "Backflip to Pop",
+    "Kaboom (Backflip to seat then pop)",
+    "Double Barani (Front 360)",
+    "Rodeo (flip + spin)",
+    "Switchback",
+    "Backflip 180 to Knees"
+  ],
+  hard: [
+    "Double Backflip",
+    "Double Frontflip",
+    "Trip Back (Triple in training)",
+    "Full-In (complex inward full)",
+    "Double Kaboom",
+    "Double Cork",
+    "Quad Pop Drill",
+    "Double Gainer",
+    "Cody Full (Cody + twist)",
+    "Whirly (advanced spin combo)"
+  ]
+};
+
+const lettersTarget = ["F","L","I","P"];
+let state = {
+  lettersIndex: 0,   // how many letters assigned (0..4)
+  history: [],       // [{trick, result, time}]
+  streak: 0,
+  currentTrick: null,
+  status: "Waiting"
+};
+
+// UI refs
+const difficultyEl = document.getElementById('difficulty');
+const trickNameEl = document.getElementById('trickName');
+const trickDescEl = document.getElementById('trickDesc');
+const btnNew = document.getElementById('btn-new');
+const btnLand = document.getElementById('btn-land');
+const btnMiss = document.getElementById('btn-miss');
+const lettersEl = document.getElementById('letters');
+const historyEl = document.getElementById('history');
+const streakEl = document.getElementById('streak');
+const statusEl = document.getElementById('statusText');
+const btnReset = document.getElementById('btn-reset');
+const btnSave = document.getElementById('btn-save');
+const btnLoad = document.getElementById('btn-load');
+
+function pickNewTrick() {
+  const level = difficultyEl.value;
+  const list = TRICKS[level];
+  const choice = list[Math.floor(Math.random()*list.length)];
+  state.currentTrick = {name: choice, level};
+  trickNameEl.textContent = choice;
+  trickDescEl.textContent = `Difficulty: ${level[0].toUpperCase()+level.slice(1)}`;
+  setStatus("Trick given");
+  return choice;
+}
+
+function setStatus(s){
+  state.status = s;
+  statusEl.textContent = s;
+}
+
+function updateLettersUI() {
+  const shown = lettersTarget.map((l,i)=> i < state.lettersIndex ? l : "-").join(" ");
+  lettersEl.textContent = shown;
+}
+
+function addHistory(trick, result) {
+  const time = new Date().toLocaleTimeString();
+  state.history.unshift({trick, result, time});
+  renderHistory();
+}
+
+function renderHistory() {
+  if(state.history.length === 0){ historyEl.innerHTML = '<div class="tiny muted">No attempts yet</div>'; return; }
+  historyEl.innerHTML = state.history.map(h => `<div style="padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.02)"><strong>${h.result}</strong> — ${h.trick}<div class="tiny muted" style="margin-top:4px">${h.time}</div></div>`).join("");
+}
+
+btnNew.addEventListener('click', ()=>{
+  pickNewTrick();
+});
+
+btnLand.addEventListener('click', ()=>{
+  if(!state.currentTrick) { setStatus("No trick — tap New Trick"); return; }
+  addHistory(state.currentTrick.name, "LANDED");
+  state.streak += 1;
+  state.lettersIndex = 0; // landing clears letters
+  updateLettersUI();
+  streakEl.textContent = `${state.streak} landed in a row`;
+  setStatus("Landed — letters cleared");
+  // auto-give next after a small moment? keep manual
+  state.currentTrick = null;
+  trickNameEl.textContent = `Nice — cleared. Tap New Trick.`;
+});
+
+btnMiss.addEventListener('click', ()=>{
+  if(!state.currentTrick) { setStatus("No trick — tap New Trick"); return; }
+  addHistory(state.currentTrick.name, "MISSED");
+  state.streak = 0;
+  state.lettersIndex = Math.min(lettersTarget.length, state.lettersIndex + 1);
+  updateLettersUI();
+  streakEl.textContent = `${state.streak} landed in a row`;
+  setStatus("Missed — next letter assigned");
+  if(state.lettersIndex >= lettersTarget.length){
+    // Game over
+    setStatus("GAME OVER — F L I P spelled");
+    trickNameEl.textContent = `Game Over — You spelled F L I P`;
+    // mark history
+    state.history.unshift({trick: "GAME OVER", result: "LOSE", time: new Date().toLocaleTimeString()});
+    renderHistory();
+  } else {
+    state.currentTrick = null;
+    trickNameEl.textContent = `Missed — tap New Trick`;
+  }
+});
+
+btnReset.addEventListener('click', ()=>{
+  if(!confirm("Reset game? This clears letters and history.")) return;
+  state.lettersIndex = 0;
+  state.history = [];
+  state.streak = 0;
+  state.currentTrick = null;
+  trickNameEl.textContent = "Tap New Trick to start";
+  trickDescEl.textContent = "Tricks are preset and organized by Easy / Medium / Hard";
+  updateLettersUI();
+  renderHistory();
+  streakEl.textContent = "0 landed in a row";
+  setStatus("Waiting");
+});
+
+btnSave.addEventListener('click', ()=>{
+  const save = {...state, savedAt: new Date().toISOString()};
+  localStorage.setItem('gof_solo_saved', JSON.stringify(save));
+  alert("Game saved locally.");
+});
+
+btnLoad.addEventListener('click', ()=>{
+  const raw = localStorage.getItem('gof_solo_saved');
+  if(!raw){ alert("No saved game found."); return; }
+  try {
+    const s = JSON.parse(raw);
+    state.lettersIndex = s.lettersIndex || 0;
+    state.history = s.history || [];
+    state.streak = s.streak || 0;
+    state.currentTrick = null;
+    updateLettersUI();
+    renderHistory();
+    streakEl.textContent = `${state.streak} landed in a row`;
+    setStatus("Loaded saved game");
+    trickNameEl.textContent = "Loaded — tap New Trick";
+  } catch(e){
+    alert("Failed to load save.");
+  }
+});
+
+// initialize UI
+updateLettersUI();
+renderHistory();
+setStatus("Waiting");
+</script>
+</body>
+</html>
